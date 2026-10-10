@@ -60,7 +60,7 @@ Release planning runs on GitHub Milestones (P1 Friends & Family → P4 Post-Publ
 
 ## Stack and commands
 
-Vite 7 + React 19 + TypeScript 5.8 + Tailwind 3.4. Vitest runs against `vite.config.ts` (Node env, globals on). pdfjs-dist 4.x; the worker is configured once at app boot in `src/main.tsx` via Vite's `?url` import. No router (single-page app), no SSR/prerender. Analytics are env-gated (`VITE_POSTHOG_KEY`) and dead-code-eliminated when unset — see `src/lib/analytics.ts`.
+Vite 7 + React 19 + TypeScript 5.8 + Tailwind 4 (v4.3.1, CSS-first configuration with no `tailwind.config.*` file; token vocabulary in `src/design-system/styles/theme.css`). With no `tailwind-merge` in the repo, class conflicts resolve by source order in the built stylesheet rather than Tailwind v3 ordering rules. Vitest runs against `vite.config.ts` (Node env, globals on). pdfjs-dist 4.x; the worker is configured once at app boot in `src/main.tsx` via Vite's `?url` import. No router (single-page app), no SSR/prerender. Analytics are env-gated (`VITE_POSTHOG_KEY`) and dead-code-eliminated when unset — see `src/lib/analytics.ts`.
 
 ```bash
 npm run dev          # vite dev server (https://localhost:5173 — TLS, self-signed)
