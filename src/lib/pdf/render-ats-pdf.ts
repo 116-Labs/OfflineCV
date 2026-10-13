@@ -1812,19 +1812,35 @@ class Layout {
     opts: { size: number; color: RGB; space: number },
   ) {
     const { size, color, space } = opts;
+    // Consecutive same-weight chunks merge into one drawn string with real
+    // spaces: stream-order extractors (pypdf, Drive) treat each text-show as its
+    // own line, so a draw per word shreds the bullet one word per line. Regular
+    // and Bold share a space advance in both font pairs (Liberation Sans and the
+    // Helvetica fallback: 0.278 em), so the drawn width matches what wrapRuns
+    // measured and the wrap cannot move (#1193).
+    const segments: Array<{ str: string; bold: boolean; x: number }> = [];
     let x = startX;
     for (let w = 0; w < words.length; w++) {
-      if (w > 0) x += space;
+      if (w > 0) {
+        const prev = segments[segments.length - 1];
+        if (prev) prev.str += " ";
+        x += space;
+      }
       for (const chunk of words[w]) {
-        this.page.drawText(chunk.str, {
-          x,
-          y: this.y - size,
-          size,
-          font: chunk.bold ? this.fonts.bold : this.fonts.regular,
-          color,
-        });
+        const last = segments[segments.length - 1];
+        if (last && last.bold === chunk.bold) last.str += chunk.str;
+        else segments.push({ str: chunk.str, bold: chunk.bold, x });
         x += chunk.width;
       }
+    }
+    for (const seg of segments) {
+      this.page.drawText(seg.str, {
+        x: seg.x,
+        y: this.y - size,
+        size,
+        font: seg.bold ? this.fonts.bold : this.fonts.regular,
+        color,
+      });
     }
   }
 
