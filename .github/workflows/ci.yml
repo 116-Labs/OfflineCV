@@ -108,7 +108,7 @@ jobs:
           # summaries) carry no location, so drop those before upload.
           node -e 'const fs=require("fs");const f="fallow.sarif";const j=JSON.parse(fs.readFileSync(f,"utf8"));const runs=j.runs||[];const driver=runs[0]&&runs[0].tool&&runs[0].tool.driver?runs[0].tool.driver:{name:"fallow"};const rules=[],results=[];for(const r of runs){if(r.tool&&r.tool.driver&&Array.isArray(r.tool.driver.rules))rules.push(...r.tool.driver.rules);if(Array.isArray(r.results))results.push(...r.results.filter(x=>Array.isArray(x.locations)&&x.locations.length>0))}j.runs=[{tool:{driver:{...driver,rules}},automationDetails:{id:"fallow/"},results}];fs.writeFileSync(f,JSON.stringify(j))'
       - name: upload fallow SARIF
-        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: fallow.sarif
           # Pin the analysis category explicitly (not only via the SARIF's
@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+      - uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
         with:
           # Fail the job on findings instead of uploading SARIF to code scanning.
           advanced-security: false
