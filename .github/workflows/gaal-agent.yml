@@ -131,7 +131,7 @@ jobs:
       APP_CLIENT_ID: Iv23lijWO2RZ8KF2POYi
     steps:
       - name: Block outbound network except the hosts this job needs
-        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
           egress-policy: block
           disable-sudo-and-containers: true
@@ -357,7 +357,7 @@ jobs:
         # Under the job's 60: a job timeout cancels everything after it, so this
         # leaves room for the publish and release-label steps to still run.
         timeout-minutes: 45
-        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        uses: anthropics/claude-code-action@925afb53776cf1a2b738c6bdbed37b4d4000ef13 # v1.0.262
         env:
           # Telemetry hosts are blocked anyway; skip them instead of retrying.
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
@@ -378,7 +378,7 @@ jobs:
       - name: Mint the gaal-agent app token
         if: steps.gate.outputs.mode == 'issue' || steps.prep.outputs.publish == 'true'
         id: app
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ env.APP_CLIENT_ID }}
           private-key: ${{ secrets.GAAL_APP_PRIVATE_KEY }}
