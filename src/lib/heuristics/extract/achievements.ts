@@ -100,7 +100,10 @@ export function extractAchievements(
 
   // Strip page running-header/footer furniture (#225) before any parsing — it
   // is neither an award nor part of one, on either path below.
-  const lines = achievements.lines.filter((l) => !isPageFurniture(l));
+  const lines = reattachWrappedYears(
+    achievements.lines.filter((l) => !isPageFurniture(l)),
+    splitCompactList,
+  );
   if (lines.length === 0) return { value: [], confidence: 0 };
 
   // A flat award list (no bullet lines anywhere) is parsed one-entry-per-line so
@@ -119,6 +122,48 @@ export function extractAchievements(
     blocks.map((block) => achievementFromBlock(block, splitType)),
     (e) => e.title !== "",
   );
+}
+
+/** A line that is nothing but a 4-digit year, optionally behind the middot the
+ *  exporter set it off with ("2019", "· 2019"). */
+const WRAPPED_YEAR_RE = /^(?:[·•]\s*)?((?:19|20)\d{2})$/;
+
+/**
+ * Re-join a year the PDF wrapped onto its own line to the undated header above
+ * it. The exporter draws "Type · title · YYYY" on one line, but a header long
+ * enough pushes " · YYYY" onto the next; left alone that line opens a title-less
+ * block that `finalizeEntries` drops, and the year is lost on the next export.
+ * Only a non-bullet line that carries no date of its own can take the year, so a
+ * genuinely dated header never has its date overwritten. With `splitCompact`, a
+ * header holding the credential separator is left alone: `parseFlatAwardList`
+ * splits it per credential and re-joins the lone year to the LAST one, whereas
+ * joining here would let `isDatedCredentialRow` fold the whole line into one.
+ */
+function reattachWrappedYears(
+  lines: PdfLine[],
+  splitCompact: boolean,
+): PdfLine[] {
+  const out: PdfLine[] = [];
+  for (const line of lines) {
+    const year = WRAPPED_YEAR_RE.exec(line.text.trim())?.[1];
+    const prev = out[out.length - 1];
+    if (
+      year &&
+      prev &&
+      !isBulletLine(prev) &&
+      !carriesDate(prev.text) &&
+      stripDateRange(prev.text.trim()) !== "" &&
+      !(splitCompact && CREDENTIAL_SPLIT_RE.test(prev.text))
+    ) {
+      out[out.length - 1] = {
+        ...prev,
+        text: `${prev.text.trim()}${CREDENTIAL_LIST_SEPARATOR}${year}`,
+      };
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
 }
 
 /**

@@ -579,3 +579,36 @@ describe("achievement header — round-trips through every date separator", () =
     },
   );
 });
+
+describe("extractAchievements — year wrapped onto its own line", () => {
+  const header =
+    "Patent · Issued Patent US1234567B1 a very long descriptive title for a widget-processing system used across catalogs.";
+
+  // The exporter's own break can land on either side of the middot: "· 2019"
+  // alone, or "2019" alone with the middot left at the end of the line above.
+  it.each([
+    [header, "2019"],
+    [header, "· 2019"],
+    [`${header} ·`, "2019"],
+  ])(
+    "reattaches the year to the flat-list header above it (%j / %j)",
+    (head, tail) => {
+      const { value } = extractAchievements(
+        mkAchievements([head, tail, "Publication · Co-authored a survey · 2009"]),
+      );
+      expect(value).toHaveLength(2);
+      expect(value[0].type).toBe("Patent");
+      expect(value[0].title).toMatch(/catalogs\.$/);
+      expect(value[0].year).toBe("2019");
+      expect(value[1].year).toBe("2009");
+    },
+  );
+
+  it("reattaches a wrapped year on the bulleted entry-block path", () => {
+    const { value } = extractAchievements(
+      mkAchievements([header, "2019", "• Granted worldwide"]),
+    );
+    expect(value).toHaveLength(1);
+    expect(value[0].year).toBe("2019");
+  });
+});
