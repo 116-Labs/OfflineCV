@@ -732,6 +732,23 @@ function isSaintAbbreviation(matchedWord: string | undefined, tailAfterMatch: st
   return matchedWord !== undefined && /^ste?$/i.test(matchedWord) && /^[A-Z]/.test(tailAfterMatch);
 }
 
+/** Nothing but a leading house number, optionally followed by a unit
+ *  designator — the prefix a street-type word has when no street NAME
+ *  precedes it (see {@link lastStreetTypeMatchEnd}). A unit designator
+ *  ("Unit 12", "Unit #12", "Ste 400", "Fl 2", "No. 12", "#12") is not a
+ *  street name either, so it must not make the guard think one is there
+ *  ("4567 Unit 12 St. Petersburg" — #1173). Anything else before the
+ *  street-type word (a real street name, "4567 Main") is left unmatched
+ *  on purpose: that is the ambiguous case the guard defers to the
+ *  "trust the lone match" branch for. A keyword needs whitespace before
+ *  its identifier so it can't glue onto a street name that starts with it
+ *  ("Lot" in "Lotus"); the identifier allows a hyphen ("12-A"). "Apt" and
+ *  "Suite" are absent on purpose: they are `STREET_TYPE_RE` words, so a
+ *  line carrying one has two matches and never reaches the lone-match
+ *  branch that tests this. */
+const HOUSE_NUMBER_PREFIX_RE =
+  /^\s*\d+(?:\s+(?:(?:Unit|Apartment|Ste|Fl|Floor|Bldg|Building|Rm|Room|Lot|PH|No)\.?\s+#?\s*|#\s*)[A-Za-z0-9-]+)?\s*$/i;
+
 /**
  * End index of the LAST usable `STREET_TYPE_RE` match whose START precedes
  * `text`'s first comma (or anywhere in the string, when there is none) — the
@@ -753,10 +770,12 @@ function isSaintAbbreviation(matchedWord: string | undefined, tailAfterMatch: st
  * lone "St" unconditionally would drop `location` entirely — a working case
  * turned into a regression (PR #1126 round 2). A lone "St"/"Ste" is never
  * "Saint"; it is the only closer there is, so it must be trusted — UNLESS
- * nothing but the house number precedes it ("100 St. Petersburg, FL"): a
- * street suffix needs a street name to close, so there the lone "St." opens
- * the city, and the returned cut is the match's START, keeping "St." in the
- * tail (PR #1126 round 3).
+ * nothing but the house number (and, optionally, a unit designator —
+ * "4567 Unit 12 St. Petersburg, FL", #1173) precedes it ("100 St.
+ * Petersburg, FL"): a street suffix needs a street NAME to close, and a
+ * unit designator is not one, so there the lone "St." opens the city, and
+ * the returned cut is the match's START, keeping "St." in the tail (PR
+ * #1126 round 3; #1173).
  *
  * Filters by each match's START position rather than slicing the text before
  * matching: `STREET_TYPE_RE`'s own trailing `\s*,?\s+` consumes the comma
@@ -772,10 +791,6 @@ function isSaintAbbreviation(matchedWord: string | undefined, tailAfterMatch: st
  * match against. Returns `undefined` when no qualifying street-type word is
  * found at all.
  */
-/** Nothing but a leading house number — the prefix a street-type word has
- *  when no street name precedes it (see {@link lastStreetTypeMatchEnd}). */
-const HOUSE_NUMBER_ONLY_RE = /^\s*\d+\s*$/;
-
 function lastStreetTypeMatchEnd(text: string): number | undefined {
   const firstComma = text.indexOf(",");
   STREET_TYPE_RE.lastIndex = 0;
@@ -794,9 +809,10 @@ function lastStreetTypeMatchEnd(text: string): number | undefined {
   if (matches.length === 1) {
     const [lone] = matches;
     // A suffix closes a street NAME, so a Saint-shaped "St."/"Ste." with only
-    // the house number before it has no name to close: it opens the place
-    // name instead ("100 St. Petersburg, FL"), and the tail starts AT it.
-    if (lone.isSaintShaped && HOUSE_NUMBER_ONLY_RE.test(text.slice(0, lone.start))) {
+    // the house number (plus an optional unit designator, which isn't a
+    // name either, #1173) before it has no name to close: it opens the
+    // place name instead ("100 St. Petersburg, FL"), and the tail starts AT it.
+    if (lone.isSaintShaped && HOUSE_NUMBER_PREFIX_RE.test(text.slice(0, lone.start))) {
       return lone.start;
     }
     // Otherwise a lone match is the only closer the line has — trust it even
