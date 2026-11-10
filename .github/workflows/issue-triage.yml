@@ -116,7 +116,7 @@ jobs:
           echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Decide
-        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        uses: anthropics/claude-code-action@925afb53776cf1a2b738c6bdbed37b4d4000ef13 # v1.0.262
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_PAT_FOR_GOOSE }}
           github_token: ${{ github.token }}
@@ -253,7 +253,7 @@ jobs:
       - name: Mint the gaal-agent app token
         id: app
         if: steps.apply.outputs.handoff == 'true'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: Iv23lijWO2RZ8KF2POYi
           private-key: ${{ secrets.GAAL_APP_PRIVATE_KEY }}
