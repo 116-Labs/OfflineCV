@@ -329,7 +329,7 @@ jobs:
           echo "BLOCKED_DESC=${BLOCKED_DESC:-.github/, package.json, package-lock.json and .npmrc}" >> "$GITHUB_ENV"
 
       - name: Revise
-        uses: anthropics/claude-code-action@925afb53776cf1a2b738c6bdbed37b4d4000ef13 # v1.0.262
+        uses: anthropics/claude-code-action@61a9c274fa7110a66dfafc1bbbced03833eb25fe # v1.0.269
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_PAT_FOR_GOOSE }}
           github_token: ${{ github.token }}
